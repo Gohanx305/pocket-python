@@ -1,5 +1,5 @@
 // Offline support: keeps the app and its engines on the phone after the first load.
-const CACHE = "pocket-python-11";
+const CACHE = "pocket-python-12";
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil((async () => {
   for (const k of await caches.keys()) if (k !== CACHE) await caches.delete(k);

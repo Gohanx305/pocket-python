@@ -377,6 +377,24 @@ for name in images:
 doc.save("images.pdf", deflate=True)
 print("تم: images.pdf بعدد", doc.page_count, "صفحة")
 ` },
+  { tag: "py", title: "رسالة تيليجرام عبر بوت", desc: "يرسل رسالة عن طريق بوت تيليجرام (Bot API). Telethon لا يعمل في المتصفح.", code: String.raw`from urllib.parse import urlencode
+from pyodide.http import pyfetch
+
+# 1) أنشئ بوت من @BotFather وخذ التوكن
+# 2) أرسل أي رسالة للبوت، ثم افتح في سفاري:
+#    https://api.telegram.org/bot<TOKEN>/getUpdates  وخذ رقم chat id
+TOKEN = "PUT_YOUR_BOT_TOKEN_HERE"
+CHAT_ID = "123456789"
+
+res = await pyfetch(
+    f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+    method="POST",
+    headers={"Content-Type": "application/x-www-form-urlencoded"},
+    body=urlencode({"chat_id": CHAT_ID, "text": "Hello from iPhone Python"}),
+)
+data = await res.json()
+print("تم الإرسال" if data.get("ok") else data)
+` },
 ];
 
 const API_REF = `# FFmpeg  (await مطلوبة)
@@ -403,7 +421,7 @@ show("out.png")      # صورة / صوت / فيديو / PDF`;
 </script>
 
 <script type="module">
-const BUILD = "11";
+const BUILD = "12";
 // ---------- helpers ----------
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -454,6 +472,23 @@ function newScript(name, src) {
 }
 $("#scriptSel").onchange = (e) => loadScript(e.target.value);
 let saveT;
+// Text copied from chats/notes on iPhone carries odd line separators, invisible
+// characters and smart quotes that Python can't parse.
+function cleanCode(s) {
+  return s
+    .replace(/\r\n?|[\u2028\u2029\u0085\u000b\u000c]/g, "\n")
+    .replace(/[\u00a0\u2007\u202f\u3000]/g, " ")
+    .replace(/[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g, "")
+    .replace(/[\u201c\u201d\u201e\u201f\u00ab\u00bb]/g, '"')
+    .replace(/[\u2018\u2019\u201a\u201b]/g, "'")
+    .replace(/\t/g, "    ");
+}
+code.addEventListener("paste", (e) => {
+  const text = e.clipboardData?.getData("text/plain");
+  if (text == null) return;
+  e.preventDefault();
+  insert(cleanCode(text));
+});
 code.addEventListener("input", () => { cur().code = code.value; updateLines(); clearTimeout(saveT); saveT = setTimeout(saveScripts, 300); });
 function updateLines() {
   const n = code.value.split("\n").length;
@@ -678,7 +713,9 @@ async function runCode() {
   sys(`▶ ${cur().name} — ${new Date().toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" })}`);
   $("#outInfo").textContent = "";
   status("يعمل…");
-  worker.postMessage({ type: "run", code: code.value });
+  const clean = cleanCode(code.value);
+  if (clean !== code.value) { code.value = clean; code.dispatchEvent(new Event("input")); }
+  worker.postMessage({ type: "run", code: clean });
 }
 function finishRun(m) {
   running = false;
@@ -686,6 +723,8 @@ function finishRun(m) {
   if (m.error) {
     const msg = m.error.includes("SystemExit") ? m.error.split("\n").pop().replace(/^SystemExit:\s*/, "") : m.error;
     print(msg, "err"); status("انتهى بخطأ", "error");
+    const mod = msg.match(/No module named '([\w.]+)'/);
+    if (mod) sys(`المكتبة «${mod[1]}» غير موجودة هنا. المتوفر: مكتبة بايثون القياسية + ffmpeg + fitz (PyMuPDF). مكتبات الشبكة مثل telethon و requests لا تعمل داخل المتصفح؛ للإنترنت استخدم pyodide.http.pyfetch.`, "err");
   } else { sys(`✓ انتهى في ${(m.ms / 1000).toFixed(2)} ث`, "ok"); status("جاهز", "ready"); }
   if (m.ms != null) $("#outInfo").textContent = `· ${(m.ms / 1000).toFixed(1)} ث`;
   files = m.files; renderFiles();
@@ -837,7 +876,7 @@ $("#apiRef").textContent = API_REF;
 document.documentElement.dir = "rtl"; document.documentElement.lang = "ar";
 renderSel(); code.value = cur().code; updateLines();
 showView(store.get("pp.view", "editor"));
-sys("مرحباً! اكتب بايثون واضغط «تشغيل». كل شيء يعمل داخل الآيفون بدون كمبيوتر أو إنترنت للسيرفر.");
+sys("مرحباً! اكتب بايثون واضغط «تشغيل». كل شيء يعمل داخل الآيفون نفسه بدون كمبيوتر.");
 startWorker();
 </script>
 
