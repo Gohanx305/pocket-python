@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f141b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="بايثون">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<style>
+:root { color-scheme: light dark; }
+body { margin: 0; font-size: 14px; }
+header.top { padding-top: max(10px, env(safe-area-inset-top, 0px)) !important; }
+</style>
+</head>
+<body>
+<title>بايثون الجيب</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="بايثون الجيب">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one-screen phone app — top bar, one view at a time, bottom tab bar like iOS. */
+:root {
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --sunken: #e3e8ef;
+  --ink: #17202c;
+  --muted: #5d6878;
+  --line: #d3dae4;
+  --accent: #2459c4;
+  --accent-ink: #ffffff;
+  --run: #f2b632;
+  --run-ink: #1d1600;
+  --ok: #1d8a52;
+  --err: #c43838;
+  --code-bg: #fbfcfe;
+  --font-ui: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141b; --surface: #171e28; --sunken: #0b0f15; --ink: #e6ebf2; --muted: #8e9aab;
+    --line: #273142; --accent: #6d9cff; --accent-ink: #0b1220; --run: #f5c04a; --run-ink: #1d1600;
+    --ok: #4cc58a; --err: #ff7a72; --code-bg: #10161f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141b; --surface: #171e28; --sunken: #0b0f15; --ink: #e6ebf2; --muted: #8e9aab;
+  --line: #273142; --accent: #6d9cff; --accent-ink: #0b1220; --run: #f5c04a; --run-ink: #1d1600;
+  --ok: #4cc58a; --err: #ff7a72; --code-bg: #10161f; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px;
+  display: flex; flex-direction: column; overflow: hidden; -webkit-tap-highlight-color: transparent; direction: rtl;
+}
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+header.top { display: flex; align-items: center; gap: 10px; padding-block: 10px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 17px; }
+.brand svg { width: 26px; height: 26px; }
+.pill { margin-inline-start: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); padding: 4px 10px; border-radius: 999px; background: var(--sunken); white-space: nowrap; max-width: 55vw; overflow: hidden; text-overflow: ellipsis; }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.pill[data-state="ready"] i { background: var(--ok); }
+.pill[data-state="busy"] i { background: var(--run); animation: pulse 1s infinite; }
+.pill[data-state="error"] i { background: var(--err); }
+@keyframes pulse { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .pill i { animation: none !important; } }
+
+main { flex: 1; min-height: 0; position: relative; }
+.view { position: absolute; inset: 0; display: flex; flex-direction: column; min-height: 0; }
+
+/* Editor view */
+.toolbar { display: flex; gap: 8px; align-items: center; padding-block: 8px; flex-wrap: nowrap; }
+.toolbar select { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 16px; }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 8px 12px; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 14px; }
+.btn svg { width: 18px; height: 18px; }
+.btn.icon { padding: 8px; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.btn.run { background: var(--run); color: var(--run-ink); border-color: transparent; font-weight: 600; padding-inline: 16px; }
+.btn.stop { background: var(--err); color: #fff; border-color: transparent; font-weight: 600; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.danger { color: var(--err); }
+
+.editor { flex: 1 1 55%; min-height: 120px; display: flex; direction: ltr; border-block: 1px solid var(--line); background: var(--code-bg); }
+.lines { font-family: var(--font-code); font-size: 14px; line-height: 1.55; color: var(--muted); text-align: right; padding: 10px 8px 10px 10px; user-select: none; overflow: hidden; white-space: pre; background: var(--sunken); opacity: .8; min-width: 2.6em; }
+textarea#code { flex: 1; min-width: 0; border: 0; resize: none; outline: none; background: transparent; color: var(--ink); font-family: var(--font-code); font-size: 14px; line-height: 1.55; padding: 10px 12px; white-space: pre; overflow: auto; tab-size: 4; -webkit-text-size-adjust: 100%; }
+@supports (-webkit-touch-callout: none) { textarea#code, .lines { font-size: 16px; } }
+.keys { display: flex; gap: 6px; overflow-x: auto; padding-block: 6px; direction: ltr; scrollbar-width: none; }
+.keys::-webkit-scrollbar { display: none; }
+.keys button { flex: none; min-width: 40px; height: 36px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-family: var(--font-code); font-size: 15px; }
+.outhead { display: flex; align-items: center; gap: 8px; padding-block: 6px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); background: var(--surface); }
+.outhead b { color: var(--ink); font-weight: 600; }
+.outhead .sp { flex: 1; }
+.outhead button { border: 0; background: none; color: var(--accent); padding: 4px 6px; font-size: 13px; }
+#out { flex: 1 1 45%; min-height: 80px; overflow: auto; background: var(--sunken); font-family: var(--font-code); font-size: 13px; line-height: 1.5; padding-block: 10px; direction: ltr; text-align: left; white-space: pre-wrap; word-break: break-word; }
+.editor-view.out-max .editor, .editor-view.out-max .keys { display: none; }
+.editor-view.out-min #out { display: none; }
+#out .err { color: var(--err); }
+#out .sys { color: var(--muted); font-family: var(--font-ui); direction: rtl; text-align: right; }
+#out .ok { color: var(--ok); font-family: var(--font-ui); direction: rtl; text-align: right; }
+#out figure { margin: 8px 0; padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+#out figure img, #out figure video { display: block; max-width: 100%; border-radius: 6px; }
+#out figure audio { width: 100%; }
+#out figcaption { font-family: var(--font-ui); font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.ff { color: var(--muted); }
+
+/* Files view */
+.scroll { flex: 1; overflow: auto; padding-block: 14px 24px; }
+.dropzone { border: 1.5px dashed var(--line); border-radius: 14px; padding: 18px; text-align: center; color: var(--muted); background: var(--surface); display: grid; gap: 10px; justify-items: center; }
+.dropzone.hover { border-color: var(--accent); }
+.filelist { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.file { display: grid; grid-template-columns: 38px 1fr auto; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.file .ic { width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; font-family: var(--font-code); font-size: 10px; font-weight: 600; background: var(--sunken); color: var(--muted); text-transform: uppercase; }
+.file .meta { min-width: 0; }
+.file .nm { direction: ltr; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-code); font-size: 13px; }
+.file .sz { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.file .acts { display: flex; gap: 4px; }
+.empty { color: var(--muted); text-align: center; padding: 28px 8px; }
+.note { font-size: 13px; color: var(--muted); margin-top: 14px; line-height: 1.7; }
+.sect { font-size: 12px; letter-spacing: .04em; color: var(--muted); margin: 22px 0 8px; font-weight: 600; }
+
+/* Examples view */
+.examples { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+.ex { text-align: right; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 6px; align-content: start; }
+.ex h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.ex p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.tag { justify-self: start; font-family: var(--font-code); font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--sunken); color: var(--muted); direction: ltr; }
+.tag.ffmpeg { color: #fff; background: #3a7a3a; }
+.tag.pdf { color: #fff; background: #b8452f; }
+.tag.py { color: var(--accent-ink); background: var(--accent); }
+.api { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; overflow-x: auto; }
+.api pre { margin: 0; font-family: var(--font-code); font-size: 12.5px; line-height: 1.6; direction: ltr; text-align: left; }
+
+/* Tab bar */
+nav.tabs { display: flex; border-top: 1px solid var(--line); background: var(--surface); padding-bottom: env(safe-area-inset-bottom, 0px); }
+nav.tabs button { flex: 1; border: 0; background: none; padding: 8px 4px 6px; display: grid; justify-items: center; gap: 2px; font-size: 12px; color: var(--muted); }
+nav.tabs button svg { width: 24px; height: 24px; }
+nav.tabs button[aria-selected="true"] { color: var(--accent); font-weight: 600; }
+
+/* Sheet (preview / rename / confirm) */
+.sheet-bg { position: fixed; inset: 0; background: rgb(0 0 0 / .45); display: flex; align-items: flex-end; justify-content: center; z-index: 30; }
+.sheet { background: var(--surface); width: min(100%, 640px); max-height: 88%; border-radius: 18px 18px 0 0; display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom, 0px); }
+.sheet header { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.sheet header h2 { margin: 0; font-size: 15px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; text-align: right; font-family: var(--font-code); }
+.sheet .body { overflow: auto; padding: 14px 16px; display: grid; gap: 10px; }
+.sheet .body img, .sheet .body video { max-width: 100%; border-radius: 8px; display: block; margin-inline: auto; }
+.sheet .body audio { width: 100%; }
+.sheet .body pre { margin: 0; font-family: var(--font-code); font-size: 12.5px; white-space: pre-wrap; word-break: break-word; direction: ltr; text-align: left; background: var(--sunken); padding: 10px; border-radius: 8px; }
+.sheet .body input[type="text"] { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); font-size: 16px; direction: ltr; text-align: left; font-family: var(--font-code); }
+.sheet .row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(76px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 10px; font-size: 13px; z-index: 40; max-width: calc(100% - 32px); }
+.boot { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 10px; color: var(--muted); background: var(--bg); z-index: 5; padding: 24px; }
+.bar { width: 220px; height: 6px; border-radius: 3px; background: var(--sunken); overflow: hidden; margin-inline: auto; }
+.bar > div { height: 100%; width: 30%; background: var(--accent); border-radius: 3px; transition: width .3s; }
+</style>
+
+<header class="top gutter">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="7" fill="var(--accent)"/><path d="M10 12l4 4-4 4M16.5 21h6" stroke="var(--accent-ink)" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    بايثون الجيب
+  </div>
+  <span class="pill" id="pill" data-state="busy" role="status"><i></i><span id="pillText">يجهّز بايثون…</span></span>
+</header>
+
+<main>
+  <div class="boot" id="boot">
+    <div style="font-weight:600;color:var(--ink);font-size:16px">يجهّز بايثون على جهازك</div>
+    <div class="bar"><div id="bootBar"></div></div>
+    <div id="bootText" style="font-size:13px">أول فتح يحمّل نحو 13 ميغابايت، بعدها يصير أسرع.</div>
+  </div>
+
+  <section class="view editor-view" id="v-editor">
+    <div class="toolbar gutter">
+      <select id="scriptSel" aria-label="السكربت"></select>
+      <button class="btn icon" id="menuBtn" aria-label="خيارات السكربت"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+      <button class="btn run" id="runBtn" disabled><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>تشغيل</button>
+      <button class="btn stop" id="stopBtn" hidden>إيقاف</button>
+    </div>
+    <div class="editor">
+      <div class="lines" id="lines">1</div>
+      <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="كود بايثون"></textarea>
+    </div>
+    <div class="keys gutter" id="keys" aria-label="مفاتيح مساعدة"></div>
+    <div class="outhead gutter">
+      <b>المخرجات</b><span id="outInfo"></span><span class="sp"></span>
+      <button id="clearOut">مسح</button>
+      <button id="sizeOut">تكبير</button>
+    </div>
+    <div id="out" class="gutter"></div>
+  </section>
+
+  <section class="view" id="v-files" hidden>
+    <div class="scroll gutter">
+      <label class="dropzone" id="drop">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
+        <span style="color:var(--ink);font-weight:500">أضف ملفات من الصور أو تطبيق الملفات</span>
+        <span style="font-size:13px">فيديو، صوت، PDF، صور، سكربتات .py</span>
+        <input type="file" id="fileInput" multiple hidden>
+        <span class="btn primary">اختر ملفات</span>
+      </label>
+      <ul class="filelist" id="fileList"></ul>
+      <p class="note" id="persistNote"></p>
+    </div>
+  </section>
+
+  <section class="view" id="v-examples" hidden>
+    <div class="scroll gutter">
+      <div class="examples" id="examples"></div>
+      <div class="sect">طريقة الاستخدام داخل السكربت</div>
+      <div class="api"><pre id="apiRef"></pre></div>
+      <p class="note">تقدر تستخدم كل مكتبة بايثون القياسية (os, re, json, csv, zipfile, math, datetime…). مجلد العمل هو مجلد «الملفات»، فأي ملف تضيفه تقدر تفتحه باسمه مباشرة، وأي ملف يكتبه السكربت يظهر هناك.</p>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-view="editor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>المحرر</button>
+  <button role="tab" aria-selected="false" data-view="files"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>الملفات</button>
+  <button role="tab" aria-selected="false" data-view="examples"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>أمثلة</button>
+</nav>
+
+<script>
+// ---------- Examples ----------
+const EXAMPLES = [
+  { tag: "py", title: "مرحبا بايثون", desc: "يتأكد أن بايثون يعمل ويعرض ملفاتك.", code: String.raw`import sys, os, platform
+
+print("Python", sys.version.split()[0], "يعمل على", platform.system())
+print("مجلد العمل:", os.getcwd())
+
+files = os.listdir()
+print("عدد الملفات:", len(files))
+for name in files:
+    print(" -", name, os.path.getsize(name), "bytes")
+
+squares = [n * n for n in range(1, 11)]
+print("المربعات:", squares)
+` },
+  { tag: "ffmpeg", title: "فيديو تجريبي بدون ملفات", desc: "ينشئ فيديو 5 ثواني بصوت باستخدام FFmpeg ثم يعرضه.", code: String.raw`import ffmpeg
+
+# testsrc = صورة ألوان متحركة، sine = نغمة صوتية
+await ffmpeg.run(
+    "-f lavfi -i testsrc=duration=5:size=640x360:rate=30 "
+    "-f lavfi -i sine=frequency=440:duration=5 "
+    "-c:v libx264 -pix_fmt yuv420p -c:a aac -shortest test.mp4"
+)
+show("test.mp4", "فيديو تجريبي")
+` },
+  { tag: "ffmpeg", title: "فيديو إلى صوت", desc: "يستخرج الصوت من أول فيديو في مجلد الملفات بصيغة m4a.", code: String.raw`import os, ffmpeg
+
+videos = [f for f in os.listdir() if f.lower().endswith((".mp4", ".mov", ".m4v", ".webm", ".mkv"))]
+if not videos:
+    raise SystemExit("أضف فيديو من تبويب الملفات أولاً (أو شغّل مثال الفيديو التجريبي)")
+
+src = videos[0]
+out = os.path.splitext(src)[0] + "_audio.m4a"
+await ffmpeg.run("-i", src, "-vn", "-c:a", "aac", "-b:a", "160k", out)
+print("تم:", out, os.path.getsize(out) // 1024, "KB")
+show(out)
+` },
+  { tag: "ffmpeg", title: "ضغط فيديو", desc: "يصغّر الفيديو إلى 720p بجودة جيدة وحجم أقل.", code: String.raw`import os, ffmpeg
+
+videos = [f for f in os.listdir() if f.lower().endswith((".mp4", ".mov", ".m4v"))]
+if not videos:
+    raise SystemExit("أضف فيديو من تبويب الملفات أولاً")
+
+src = videos[0]
+out = os.path.splitext(src)[0] + "_small.mp4"
+await ffmpeg.run(
+    "-i", src,
+    "-vf", "scale=-2:'min(720,ih)'",
+    "-c:v", "libx264", "-preset", "veryfast", "-crf", "28",
+    "-c:a", "aac", "-b:a", "128k",
+    out,
+)
+before, after = os.path.getsize(src), os.path.getsize(out)
+print(f"{before/1e6:.1f} MB  ->  {after/1e6:.1f} MB")
+show(out)
+` },
+  { tag: "ffmpeg", title: "صور من فيديو", desc: "يأخذ لقطة كل ثانية من الفيديو ويحفظها كصور JPG.", code: String.raw`import os, ffmpeg
+
+videos = [f for f in os.listdir() if f.lower().endswith((".mp4", ".mov", ".m4v"))]
+if not videos:
+    raise SystemExit("أضف فيديو من تبويب الملفات أولاً")
+
+os.makedirs("frames", exist_ok=True)
+await ffmpeg.run("-i", videos[0], "-vf", "fps=1,scale=480:-2", "frames/shot_%03d.jpg")
+shots = sorted(os.listdir("frames"))
+print("عدد الصور:", len(shots))
+for name in shots[:3]:
+    show("frames/" + name, name)
+` },
+  { tag: "pdf", title: "إنشاء PDF", desc: "ينشئ ملف PDF من صفحتين بنص، ثم يحوّل الصفحة الأولى لصورة.", code: String.raw`import fitz  # PyMuPDF
+
+doc = fitz.open()
+for i in range(2):
+    page = doc.new_page()
+    page.insert_text((72, 90), f"Page {i + 1}", fontsize=28)
+    page.insert_text((72, 140), "Made on iPhone with Python + MuPDF.\nNo computer needed.", fontsize=13)
+
+doc.save("hello.pdf")
+print("صفحات:", doc.page_count)
+doc[0].get_pixmap(dpi=100).save("hello_page1.png")
+show("hello_page1.png", "الصفحة الأولى")
+` },
+  { tag: "pdf", title: "PDF إلى صور", desc: "يحوّل كل صفحات أول ملف PDF إلى صور PNG.", code: String.raw`import os, fitz
+
+pdfs = [f for f in os.listdir() if f.lower().endswith(".pdf")]
+if not pdfs:
+    raise SystemExit("أضف ملف PDF أولاً (أو شغّل مثال إنشاء PDF)")
+
+doc = fitz.open(pdfs[0])
+os.makedirs("pages", exist_ok=True)
+for page in doc:
+    pix = page.get_pixmap(dpi=120)
+    name = f"pages/page_{page.number + 1:03d}.png"
+    pix.save(name)
+    print(name, pix.width, "x", pix.height)
+show("pages/page_001.png")
+` },
+  { tag: "pdf", title: "استخراج نص PDF", desc: "يقرأ النص من كل الصفحات ويحفظه في ملف txt.", code: String.raw`import os, fitz
+
+pdfs = [f for f in os.listdir() if f.lower().endswith(".pdf")]
+if not pdfs:
+    raise SystemExit("أضف ملف PDF أولاً")
+
+doc = fitz.open(pdfs[0])
+print(doc.metadata)
+text = ""
+for page in doc:
+    text += f"\n--- صفحة {page.number + 1} ---\n" + page.get_text()
+
+out = os.path.splitext(pdfs[0])[0] + ".txt"
+with open(out, "w", encoding="utf-8") as f:
+    f.write(text)
+print(text[:1500])
+print("\nحُفظ في", out)
+` },
+  { tag: "pdf", title: "دمج ملفات PDF", desc: "يدمج كل ملفات PDF في المجلد بملف واحد بالترتيب الأبجدي.", code: String.raw`import os, fitz
+
+pdfs = sorted(f for f in os.listdir() if f.lower().endswith(".pdf") and f != "merged.pdf")
+if len(pdfs) < 2:
+    raise SystemExit("تحتاج ملفين PDF على الأقل")
+
+merged = fitz.open()
+for name in pdfs:
+    with fitz.open(name) as src:
+        merged.insert_pdf(src)
+        print("أُضيف", name, len(src), "صفحة")
+
+merged.save("merged.pdf", garbage=3, deflate=True)
+print("المجموع:", merged.page_count, "صفحة -> merged.pdf")
+` },
+  { tag: "pdf", title: "صور إلى PDF", desc: "يجمع كل صور JPG و PNG في ملف PDF واحد، صورة لكل صفحة.", code: String.raw`import os, fitz
+
+images = sorted(f for f in os.listdir() if f.lower().endswith((".jpg", ".jpeg", ".png")))
+if not images:
+    raise SystemExit("أضف صوراً من تبويب الملفات أولاً")
+
+A4 = (595, 842)
+doc = fitz.open()
+for name in images:
+    page = doc.new_page(width=A4[0], height=A4[1])
+    page.insert_image(fitz.Rect(20, 20, A4[0] - 20, A4[1] - 20), filename=name)
+    print("+", name)
+
+doc.save("images.pdf", deflate=True)
+print("تم: images.pdf بعدد", doc.page_count, "صفحة")
+` },
+];
+
+const API_REF = `# FFmpeg  (await مطلوبة)
+import ffmpeg
+await ffmpeg.run("-i", "in.mp4", "out.m4a")
+await ffmpeg.run("-i in.mov -vf scale=720:-2 out.mp4")
+print(await ffmpeg.probe("in.mp4"))
+
+# MuPDF بواجهة PyMuPDF
+import fitz            # أو: import pymupdf
+doc = fitz.open("file.pdf")      # fitz.open() لملف جديد
+doc.page_count, doc.metadata, doc.get_toc()
+page = doc[0]
+page.get_text()                  # "text" | "blocks" | "dict" | "html"
+page.search_for("كلمة")          # قائمة Rect
+page.get_pixmap(dpi=150).save("p.png")
+page.insert_text((72, 72), "Hello", fontsize=14)
+page.insert_image(fitz.Rect(0, 0, 300, 300), filename="a.jpg")
+doc.insert_pdf(other); doc.delete_page(0); doc.select([2, 0, 1])
+doc.save("out.pdf", garbage=3, deflate=True)
+
+# عرض ملف داخل المخرجات
+show("out.png")      # صورة / صوت / فيديو / PDF`;
+</script>
+
+<script type="module">
+const BUILD = "11";
+// ---------- helpers ----------
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const fmtSize = (n) => n < 1024 ? n + " B" : n < 1048576 ? (n / 1024).toFixed(1) + " KB" : (n / 1048576).toFixed(1) + " MB";
+const extOf = (n) => (n.match(/\.([a-z0-9]+)$/i)?.[1] || "").toLowerCase();
+const MIME = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", bmp: "image/bmp",
+  mp4: "video/mp4", m4v: "video/mp4", mov: "video/quicktime", webm: "video/webm", mkv: "video/x-matroska",
+  mp3: "audio/mpeg", m4a: "audio/mp4", aac: "audio/aac", wav: "audio/wav", ogg: "audio/ogg", opus: "audio/ogg", flac: "audio/flac",
+  pdf: "application/pdf", txt: "text/plain", py: "text/x-python", json: "application/json", csv: "text/csv", md: "text/markdown", srt: "text/plain", vtt: "text/vtt", html: "text/html", xml: "text/xml", log: "text/plain" };
+const kindOf = (n) => { const m = MIME[extOf(n)] || ""; return m.startsWith("image/") ? "image" : m.startsWith("video/") ? "video" : m.startsWith("audio/") ? "audio" : m === "application/pdf" ? "pdf" : m.startsWith("text/") || m === "application/json" ? "text" : "other"; };
+let toastTimer;
+function toast(msg) {
+  document.querySelector(".toast")?.remove();
+  const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.append(t);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), 2600);
+}
+function status(text, state = "busy") { $("#pill").dataset.state = state; $("#pillText").textContent = text; }
+
+// ---------- tabs ----------
+function showView(name) {
+  for (const b of document.querySelectorAll("nav.tabs button")) b.setAttribute("aria-selected", b.dataset.view === name);
+  for (const v of document.querySelectorAll(".view")) v.hidden = v.id !== "v-" + name;
+  store.set("pp.view", name);
+}
+for (const b of document.querySelectorAll("nav.tabs button")) b.onclick = () => showView(b.dataset.view);
+
+// ---------- scripts (kept on this device) ----------
+let scripts = store.get("pp.scripts", null);
+if (!Array.isArray(scripts) || !scripts.length) scripts = [{ id: "s1", name: "main.py", code: EXAMPLES[0].code }];
+let currentId = store.get("pp.current", scripts[0].id);
+if (!scripts.find((s) => s.id === currentId)) currentId = scripts[0].id;
+const code = $("#code");
+const cur = () => scripts.find((s) => s.id === currentId);
+function saveScripts() { store.set("pp.scripts", scripts); store.set("pp.current", currentId); }
+function renderSel() {
+  $("#scriptSel").innerHTML = scripts.map((s) => `<option value="${s.id}" ${s.id === currentId ? "selected" : ""}>${esc(s.name)}</option>`).join("");
+}
+function loadScript(id) { currentId = id; code.value = cur().code; renderSel(); updateLines(); saveScripts(); }
+function newScript(name, src) {
+  let base = name || "script.py", n = 1, nm = base;
+  while (scripts.some((s) => s.name === nm)) nm = base.replace(/(\.py)?$/, `_${++n}.py`);
+  const s = { id: "s" + Date.now().toString(36), name: nm, code: src ?? "" };
+  scripts.push(s); loadScript(s.id); return s;
+}
+$("#scriptSel").onchange = (e) => loadScript(e.target.value);
+let saveT;
+code.addEventListener("input", () => { cur().code = code.value; updateLines(); clearTimeout(saveT); saveT = setTimeout(saveScripts, 300); });
+function updateLines() {
+  const n = code.value.split("\n").length;
+  $("#lines").textContent = Array.from({ length: n }, (_, i) => i + 1).join("\n");
+}
+code.addEventListener("scroll", () => { $("#lines").scrollTop = code.scrollTop; });
+
+// insert text at caret, keeping undo where the browser supports it
+function insert(text, back = 0) {
+  code.focus();
+  if (!document.execCommand("insertText", false, text)) {
+    const s = code.selectionStart, e = code.selectionEnd;
+    code.setRangeText(text, s, e, "end");
+    code.dispatchEvent(new Event("input"));
+  }
+  if (back) code.selectionStart = code.selectionEnd = code.selectionEnd - back;
+}
+code.addEventListener("keydown", (e) => {
+  if (e.key === "Tab") { e.preventDefault(); insert("    "); }
+  else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); runCode(); }
+  else if (e.key === "Enter") {
+    const before = code.value.slice(0, code.selectionStart);
+    const line = before.slice(before.lastIndexOf("\n") + 1);
+    let ind = line.match(/^\s*/)[0];
+    if (/:\s*$/.test(line)) ind += "    ";
+    e.preventDefault(); insert("\n" + ind);
+  }
+});
+const KEYS = [["⇥", "    "], ["(", "()", 1], [")", ")"], ["[", "[]", 1], ["]", "]"], ["{", "{}", 1], [":", ":"], ['"', '""', 1], ["'", "''", 1], ["=", "="], ["#", "# "], [".", "."], [",", ", "], ["_", "_"], ["+", "+"], ["-", "-"], ["*", "*"], ["/", "/"], ["<", "<"], [">", ">"], ["f\"", 'f""', 1]];
+$("#keys").innerHTML = KEYS.map((k, i) => `<button data-k="${i}" aria-label="${esc(k[0])}">${esc(k[0])}</button>`).join("") +
+  `<button data-act="undo" aria-label="تراجع">↶</button><button data-act="redo" aria-label="إعادة">↷</button><button data-act="hide" aria-label="إخفاء الكيبورد">⌄</button>`;
+$("#keys").addEventListener("pointerdown", (e) => e.preventDefault()); // keep keyboard open
+$("#keys").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.act === "hide") return code.blur();
+  if (b.dataset.act) { code.focus(); document.execCommand(b.dataset.act); return; }
+  const [, t, back] = KEYS[+b.dataset.k]; insert(t, back || 0);
+});
+
+// ---------- output ----------
+const out = $("#out");
+function print(text, cls) {
+  const atEnd = out.scrollHeight - out.scrollTop - out.clientHeight < 40;
+  const last = out.lastElementChild;
+  if (last && last.tagName === "SPAN" && last.className === (cls || "") && last.textContent.length < 20000) last.textContent += text + "\n";
+  else { const s = document.createElement("span"); if (cls) s.className = cls; s.textContent = text + "\n"; out.append(s); }
+  if (atEnd) out.scrollTop = out.scrollHeight;
+}
+function sys(text, cls = "sys") { const d = document.createElement("div"); d.className = cls; d.textContent = text; out.append(d); out.scrollTop = out.scrollHeight; }
+$("#clearOut").onclick = () => { out.textContent = ""; $("#outInfo").textContent = ""; };
+const ev = $("#v-editor");
+let outMode = 0;
+$("#sizeOut").onclick = () => {
+  outMode = (outMode + 1) % 3;
+  ev.classList.toggle("out-max", outMode === 1); ev.classList.toggle("out-min", outMode === 2);
+  $("#sizeOut").textContent = ["تكبير", "تصغير", "إظهار"][outMode];
+};
+
+function mediaEl(name, blob) {
+  const url = URL.createObjectURL(blob);
+  const k = kindOf(name);
+  if (k === "image") { const i = new Image(); i.src = url; i.alt = name; return i; }
+  if (k === "video") { const v = document.createElement("video"); v.src = url; v.controls = true; v.playsInline = true; v.preload = "metadata"; return v; }
+  if (k === "audio") { const a = document.createElement("audio"); a.src = url; a.controls = true; return a; }
+  return null;
+}
+
+// ---------- downloads ----------
+const OK_EXT = new Set("gif png jpg jpeg webp mp4 webm mov txt json md docx pptx epub csv ttf html svg pdf xlsx zip".split(" "));
+let downloadsApi;
+const downloadsReady = (async () => { try { downloadsApi = await window.claude?.use?.("downloads"); } catch { downloadsApi = null; } })();
+const crcTable = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8) { let c = 0xffffffff; for (let i = 0; i < u8.length; i++) c = crcTable[(c ^ u8[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+function zipOne(name, data) { // stored (no compression) zip with one file
+  const nm = new TextEncoder().encode(name), crc = crc32(data), n = data.length;
+  const lh = new DataView(new ArrayBuffer(30)); lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint32(14, crc, true); lh.setUint32(18, n, true); lh.setUint32(22, n, true); lh.setUint16(26, nm.length, true);
+  const cd = new DataView(new ArrayBuffer(46)); cd.setUint32(0, 0x02014b50, true); cd.setUint16(4, 20, true); cd.setUint16(6, 20, true); cd.setUint16(8, 0x0800, true); cd.setUint32(16, crc, true); cd.setUint32(20, n, true); cd.setUint32(24, n, true); cd.setUint16(28, nm.length, true);
+  const end = new DataView(new ArrayBuffer(22)); end.setUint32(0, 0x06054b50, true); end.setUint16(8, 1, true); end.setUint16(10, 1, true); end.setUint32(12, 46 + nm.length, true); end.setUint32(16, 30 + nm.length + n, true);
+  return new Blob([lh, nm, data, cd, nm, end], { type: "application/zip" });
+}
+async function saveFile(name, data) {
+  const base = name.split("/").pop();
+  let fname = base, blob = new Blob([data], { type: MIME[extOf(base)] || "application/octet-stream" });
+  await downloadsReady;
+  if (downloadsApi) {
+    if (!OK_EXT.has(extOf(base))) {
+      if (kindOf(base) === "text") fname = base + ".txt";
+      else { blob = zipOne(base, data); fname = base + ".zip"; }
+    }
+    try { await downloadsApi.save({ filename: fname, data: blob }); toast("تم الحفظ"); }
+    catch (e) { if (e?.code !== "declined") toast(e?.code === "rate_limited" ? "انتظر لحظة وحاول مرة ثانية" : "تعذّر الحفظ هنا"); }
+    return;
+  }
+  // Standalone (Safari): the share sheet offers "Save to Files" / "Save Image" / AirDrop.
+  const file = new File([blob], fname, { type: blob.type });
+  if (navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); } catch (e) { if (e?.name !== "AbortError") toast("تعذّر فتح المشاركة"); }
+    return;
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = fname; document.body.append(a); a.click(); a.remove();
+}
+
+// ---------- worker & ffmpeg ----------
+let worker, ready = false, running = false, files = [], persistent = false;
+const waiters = new Map(); let reqId = 1;
+function request(msg, transfer) { const req = reqId++; return new Promise((res) => { waiters.set(req, res); worker.postMessage({ ...msg, req }, transfer || []); }); }
+
+let ff = null, ffLoading = null, ffWasmURL = null, ffActive = 0;
+function resetFF() { try { ff?.terminate(); } catch {} ff = null; ffLoading = null; }
+function getFF() {
+  if (ff) return Promise.resolve(ff);
+  ffLoading ??= (async () => {
+    status("تحميل FFmpeg (32MB أول مرة)…");
+    const { FFmpeg } = await import("./vendor/ffmpeg/index.js");
+    if (!ffWasmURL) {
+      const parts = await Promise.all([0, 1, 2].map((i) => fetch(`vendor/ffmpeg/core${i}.wasm`).then((r) => { if (!r.ok) throw new Error("تعذّر تنزيل FFmpeg، تأكد من الإنترنت"); return r.arrayBuffer(); })));
+      ffWasmURL = URL.createObjectURL(new Blob(parts, { type: "application/wasm" }));
+    }
+    const wasmURL = ffWasmURL;
+    const f = new FFmpeg();
+    f.on("log", ({ message }) => { ffActive = Date.now(); if (ffLog && message !== "Aborted()") { ffLog.push(message); if (!ffQuiet) print(message, "ff"); } });
+    f.on("progress", ({ progress }) => { ffActive = Date.now(); if (progress > 0 && progress <= 1) status(`FFmpeg ${Math.round(progress * 100)}%`); });
+    await f.load({ coreURL: new URL("vendor/ffmpeg/ffmpeg-core.js", document.baseURI).href, wasmURL });
+    ff = f; return f;
+  })().catch((e) => { ffLoading = null; throw e; });
+  return ffLoading;
+}
+let ffLog = null, ffQuiet = false;
+async function listAll(f, dir) {
+  const outp = [];
+  for (const e of await f.listDir(dir)) {
+    if (e.name === "." || e.name === "..") continue;
+    const p = (dir === "/" ? "" : dir) + "/" + e.name;
+    if (!e.isDir) outp.push(p);
+  }
+  return outp;
+}
+async function runFFmpeg({ id, args, inputs, quiet }) {
+  let code = 1, filesOut = {}, log = "";
+  try {
+    const f = await getFF();
+    status("FFmpeg يعمل…");
+    const dirs = new Set(["/"]);
+    const mk = async (p) => { const parts = p.split("/").slice(0, -1); let d = ""; for (const s of parts) { if (!s) continue; d += "/" + s; try { await f.createDir(d); } catch {} dirs.add(d); } };
+    for (const [name, data] of Object.entries(inputs)) { await mk("/" + name); await f.writeFile("/" + name, data); }
+    for (const a of args) if (!a.startsWith("-") && a.includes("/") && !a.startsWith("/")) await mk("/" + a);
+    const before = new Set(); for (const d of dirs) for (const p of await listAll(f, d)) before.add(p);
+    ffLog = []; ffQuiet = quiet;
+    // ffmpeg.wasm's mjpeg encoder crashes on the 2nd frame with optimal Huffman tables; default tables work.
+    if (!args.includes("-huffman")) args = args.flatMap((a, i) => /\.jpe?g$/i.test(a) && args[i - 1] !== "-i" ? ["-huffman", "default", a] : [a]);
+    // Watchdog: if FFmpeg goes silent for a minute it has hung; kill it so the app never stays stuck.
+    ffActive = Date.now();
+    const dog = setInterval(() => { if (Date.now() - ffActive > 60000) { clearInterval(dog); print("FFmpeg توقف عن الاستجابة، أُعيد تشغيله.", "err"); resetFF(); } }, 5000);
+    try { code = await f.exec(args.includes("-hide_banner") ? args : ["-hide_banner", ...args]); }
+    finally { clearInterval(dog); }
+    log = ffLog.join("\n"); ffLog = null;
+    for (const d of dirs) for (const p of await listAll(f, d)) {
+      if (!before.has(p)) filesOut[p.slice(1)] = await f.readFile(p);
+      try { await f.deleteFile(p); } catch {}
+    }
+    for (const p of before) { try { await f.deleteFile(p); } catch {} }
+  } catch (e) {
+    ffLog = null;
+    const msg = String(e?.message || e);
+    if (!/terminate/i.test(msg)) print("FFmpeg: " + msg, "err");
+    log = msg; code = 1;
+    resetFF(); // a crashed FFmpeg can't be reused; the next run starts a fresh one
+  }
+  status("يعمل…");
+  const transfer = Object.values(filesOut).map((u) => u.buffer);
+  worker.postMessage({ type: "reply", id, code, files: filesOut, log }, transfer);
+}
+
+let bootLog = [];
+function bootFail(text) {
+  status("تعذّر تشغيل بايثون", "error");
+  const pre = document.createElement("pre");
+  pre.style.cssText = "direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-word;font:12px/1.5 var(--font-code);background:var(--sunken);color:var(--ink);padding:10px;border-radius:8px;max-height:45vh;overflow:auto;user-select:text;-webkit-user-select:text";
+  pre.textContent = [text, ...bootLog.slice(-25), navigator.userAgent].join("\n");
+  $("#bootText").replaceChildren("صوّر هذه الرسالة وأرسلها:", pre);
+}
+function startWorker() {
+  ready = false;
+  worker = new Worker(new URL("app/worker.js?v=" + BUILD, document.baseURI), { type: "module" });
+  worker.onerror = (e) => bootFail(e.message || "خطأ غير معروف في تحميل العامل");
+  worker.onmessage = ({ data: m }) => {
+    switch (m.type) {
+      case "status":
+        status(m.text);
+        if (m.step) $("#bootBar").style.width = "60%";
+        break;
+      case "ready":
+        ready = true; persistent = m.persistent; files = m.files;
+        $("#boot").hidden = true; $("#runBtn").disabled = false;
+        status("جاهز · Python " + m.version.replace(/^(\d+\.\d+).*/, "$1"), "ready");
+        renderFiles();
+        break;
+      case "lib": if (m.error) sys("تعذّر تحميل MuPDF: " + m.error, "err"); break;
+      case "out": for (const it of m.items) { print(it.text, it.kind === "err" ? "err" : ""); if (!ready) bootLog.push(it.text); } break;
+      case "show": showInline(m.name, m.data, m.caption); break;
+      case "ffmpeg": runFFmpeg(m); break;
+      case "done": finishRun(m); break;
+      case "files": files = m.files; renderFiles(); break;
+      case "file": case "pdfpages": waiters.get(m.req)?.(m); waiters.delete(m.req); break;
+      case "fatal":
+        sys("خطأ: " + m.text, "err");
+        if (m.during === "run") finishRun({ error: m.text, files });
+        if (m.during === "init") bootFail(m.text);
+        break;
+    }
+  };
+  worker.postMessage({ type: "init" });
+}
+
+// ---------- run ----------
+async function runCode() {
+  if (!ready || running) return;
+  running = true;
+  $("#runBtn").hidden = true; $("#stopBtn").hidden = false;
+  if (outMode === 2) $("#sizeOut").click();
+  code.blur();
+  sys(`▶ ${cur().name} — ${new Date().toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" })}`);
+  $("#outInfo").textContent = "";
+  status("يعمل…");
+  worker.postMessage({ type: "run", code: code.value });
+}
+function finishRun(m) {
+  running = false;
+  $("#runBtn").hidden = false; $("#stopBtn").hidden = true;
+  if (m.error) {
+    const msg = m.error.includes("SystemExit") ? m.error.split("\n").pop().replace(/^SystemExit:\s*/, "") : m.error;
+    print(msg, "err"); status("انتهى بخطأ", "error");
+  } else { sys(`✓ انتهى في ${(m.ms / 1000).toFixed(2)} ث`, "ok"); status("جاهز", "ready"); }
+  if (m.ms != null) $("#outInfo").textContent = `· ${(m.ms / 1000).toFixed(1)} ث`;
+  files = m.files; renderFiles();
+}
+$("#runBtn").onclick = runCode;
+$("#stopBtn").onclick = () => {
+  worker.terminate(); ff?.terminate(); ff = null; ffLoading = null;
+  running = false; $("#runBtn").hidden = false; $("#stopBtn").hidden = true; $("#runBtn").disabled = true;
+  sys("■ أُوقف السكربت. يعاد تشغيل بايثون…", "err");
+  startWorker();
+};
+
+function showInline(name, data, caption) {
+  const blob = new Blob([data], { type: MIME[extOf(name)] || "application/octet-stream" });
+  const fig = document.createElement("figure");
+  let el = mediaEl(name, blob);
+  if (!el && kindOf(name) === "pdf") { el = document.createElement("div"); el.textContent = "PDF: " + name; pdfInto(name, el, 1); }
+  if (!el && kindOf(name) === "text") { el = document.createElement("pre"); el.style.margin = "0"; blob.text().then((t) => el.textContent = t.slice(0, 5000)); }
+  if (!el) { el = document.createElement("div"); el.textContent = name + " · " + fmtSize(data.length); }
+  fig.append(el);
+  const cap = document.createElement("figcaption");
+  cap.innerHTML = `<span>${esc(caption || name)}</span>`;
+  const b = document.createElement("button"); b.className = "btn"; b.textContent = "حفظ"; b.onclick = () => saveFile(name, data);
+  cap.append(b); fig.append(cap); out.append(fig);
+  setTimeout(() => out.scrollTop = out.scrollHeight, 50);
+}
+async function pdfInto(name, el, max = 4) {
+  const r = await request({ type: "pdfpreview", name });
+  el.textContent = "";
+  r.pages.slice(0, max).forEach((png, i) => { const im = new Image(); im.src = URL.createObjectURL(new Blob([png], { type: "image/png" })); im.alt = "صفحة " + (i + 1); im.style.marginBottom = "8px"; el.append(im); });
+  if (r.count > max) { const p = document.createElement("div"); p.style.cssText = "color:var(--muted);font-size:13px;text-align:center"; p.textContent = `${r.count} صفحة`; el.append(p); }
+}
+
+// ---------- files ----------
+const ICON = { image: "IMG", video: "VID", audio: "AUD", pdf: "PDF", text: "TXT", other: "BIN" };
+function renderFiles() {
+  const list = files.filter((f) => !f.dir).sort((a, b) => b.mtime - a.mtime);
+  $("#fileList").innerHTML = list.length ? list.map((f) => `
+    <li class="file">
+      <div class="ic">${extOf(f.name) || ICON[kindOf(f.name)]}</div>
+      <div class="meta"><div class="nm" title="${esc(f.name)}">${esc(f.name)}</div><div class="sz">${fmtSize(f.size)}</div></div>
+      <div class="acts">
+        <button class="btn icon" data-act="open" data-n="${esc(f.name)}" aria-label="فتح ${esc(f.name)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <button class="btn icon" data-act="save" data-n="${esc(f.name)}" aria-label="حفظ ${esc(f.name)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5M4 20h16"/></svg></button>
+      </div>
+    </li>`).join("") : `<li class="empty">لا توجد ملفات بعد. أضف ملفاً، أو شغّل مثالاً من تبويب الأمثلة.</li>`;
+  $("#persistNote").textContent = persistent
+    ? "الملفات محفوظة في متصفح هذا الجهاز وتبقى بعد إغلاق الصفحة. لإخراج ملف إلى تطبيق الملفات أو الصور اضغط زر الحفظ."
+    : "تنبيه: الملفات هنا مؤقتة وتُمسح عند إغلاق الصفحة. احفظ ما تحتاجه بزر الحفظ.";
+}
+$("#fileList").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const name = b.dataset.n;
+  const r = await request({ type: "get", name });
+  if (b.dataset.act === "save") saveFile(name, r.data); else openSheet(name, r.data);
+});
+async function addFiles(list) {
+  if (!ready) return toast("انتظر حتى يجهز بايثون");
+  const payload = [];
+  for (const f of list) payload.push({ name: f.name.replace(/[\\/]/g, "_"), data: await f.arrayBuffer() });
+  worker.postMessage({ type: "put", files: payload }, payload.map((p) => p.data));
+  toast(payload.length === 1 ? "أُضيف " + payload[0].name : `أُضيف ${payload.length} ملفات`);
+}
+$("#fileInput").onchange = (e) => { addFiles([...e.target.files]); e.target.value = ""; };
+const drop = $("#drop");
+drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("hover"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("hover"));
+drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("hover"); addFiles([...e.dataTransfer.files]); });
+
+// ---------- sheet ----------
+function sheet(title, build) {
+  const bg = document.createElement("div"); bg.className = "sheet-bg";
+  bg.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><header><h2></h2><button class="btn" data-close>إغلاق</button></header><div class="body"></div></div>`;
+  bg.querySelector("h2").textContent = title;
+  const close = () => bg.remove();
+  bg.addEventListener("click", (e) => { if (e.target === bg || e.target.closest("[data-close]")) close(); });
+  document.body.append(bg);
+  build(bg.querySelector(".body"), close);
+  return close;
+}
+function openSheet(name, data) {
+  sheet(name, (body, close) => {
+    const blob = new Blob([data], { type: MIME[extOf(name)] || "application/octet-stream" });
+    const k = kindOf(name);
+    const el = mediaEl(name, blob);
+    if (el) body.append(el);
+    else if (k === "pdf") { const d = document.createElement("div"); d.textContent = "يعرض الصفحات…"; body.append(d); pdfInto(name, d); }
+    else if (k === "text") { const pre = document.createElement("pre"); blob.text().then((t) => pre.textContent = t.length > 20000 ? t.slice(0, 20000) + "\n…" : t); body.append(pre); }
+    else { const p = document.createElement("p"); p.textContent = "لا توجد معاينة لهذا النوع."; body.append(p); }
+    const info = document.createElement("div"); info.style.cssText = "color:var(--muted);font-size:13px"; info.textContent = fmtSize(data.length); body.append(info);
+    const row = document.createElement("div"); row.className = "row";
+    const btn = (label, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.textContent = label; b.onclick = fn; row.append(b); return b; };
+    if (k === "text" && (extOf(name) === "py" || extOf(name) === "txt")) btn("فتح في المحرر", "", async () => { newScript(name.split("/").pop().replace(/\.txt$/, ".py"), await blob.text()); close(); showView("editor"); });
+    btn("إعادة تسمية", "", () => { close(); renameSheet(name); });
+    const del = btn("حذف", "danger", () => {
+      if (del.dataset.armed) { worker.postMessage({ type: "delete", name }); close(); toast("حُذف " + name); }
+      else { del.dataset.armed = "1"; del.textContent = "اضغط مرة ثانية للحذف"; }
+    });
+    btn("حفظ في الجهاز", "primary", () => saveFile(name, data));
+    body.append(row);
+  });
+}
+function renameSheet(name) {
+  sheet("إعادة تسمية", (body, close) => {
+    body.innerHTML = `<input type="text" id="renameInput" autocapitalize="off" autocorrect="off" spellcheck="false"><div class="row"><button class="btn primary" id="renameOk">حفظ</button></div>`;
+    const inp = body.querySelector("input"); inp.value = name; inp.focus();
+    const ok = () => { const to = inp.value.trim(); if (to && to !== name) worker.postMessage({ type: "rename", from: name, to }); close(); };
+    body.querySelector("#renameOk").onclick = ok;
+    inp.onkeydown = (e) => { if (e.key === "Enter") ok(); };
+  });
+}
+
+// script menu
+$("#menuBtn").onclick = () => sheet(cur().name, (body, close) => {
+  body.innerHTML = `<input type="text" id="scriptName" aria-label="اسم السكربت" autocapitalize="off" autocorrect="off" spellcheck="false"><div class="row" style="justify-content:stretch"></div>`;
+  const inp = body.querySelector("input"); inp.value = cur().name;
+  inp.onchange = () => { const v = inp.value.trim(); if (v) { cur().name = /\.py$/.test(v) ? v : v + ".py"; renderSel(); saveScripts(); } };
+  const row = body.querySelector(".row");
+  const btn = (label, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.textContent = label; b.onclick = fn; row.append(b); return b; };
+  btn("سكربت جديد", "primary", () => { newScript("script.py", ""); close(); code.focus(); });
+  btn("نسخة", "", () => { newScript(cur().name.replace(/\.py$/, "_copy.py"), code.value); close(); });
+  btn("حفظ في الملفات", "", () => { const data = new TextEncoder().encode(code.value); worker.postMessage({ type: "put", files: [{ name: cur().name, data: data.buffer }] }, [data.buffer]); toast("حُفظ " + cur().name + " في الملفات"); close(); });
+  btn("تصدير .py", "", () => saveFile(cur().name, new TextEncoder().encode(code.value)));
+  const del = btn("حذف السكربت", "danger", () => {
+    if (!del.dataset.armed) { del.dataset.armed = "1"; del.textContent = "اضغط مرة ثانية للحذف"; return; }
+    scripts = scripts.filter((s) => s.id !== currentId);
+    if (!scripts.length) scripts.push({ id: "s" + Date.now().toString(36), name: "main.py", code: "" });
+    loadScript(scripts[0].id); close();
+  });
+});
+
+// examples
+$("#examples").innerHTML = EXAMPLES.map((ex, i) => `
+  <button class="ex" data-i="${i}">
+    <span class="tag ${ex.tag}">${{ py: "python", ffmpeg: "ffmpeg", pdf: "mupdf" }[ex.tag]}</span>
+    <h3>${esc(ex.title)}</h3><p>${esc(ex.desc)}</p>
+  </button>`).join("");
+$("#examples").onclick = (e) => {
+  const b = e.target.closest(".ex"); if (!b) return;
+  const ex = EXAMPLES[+b.dataset.i];
+  const existing = scripts.find((s) => s.name === ex.title + ".py");
+  if (existing) { existing.code = ex.code; loadScript(existing.id); } else newScript(ex.title + ".py", ex.code);
+  showView("editor");
+  toast("فُتح المثال، اضغط تشغيل");
+};
+$("#apiRef").textContent = API_REF;
+
+// boot
+document.documentElement.dir = "rtl"; document.documentElement.lang = "ar";
+renderSel(); code.value = cur().code; updateLines();
+showView(store.get("pp.view", "editor"));
+sys("مرحباً! اكتب بايثون واضغط «تشغيل». كل شيء يعمل داخل الآيفون بدون كمبيوتر أو إنترنت للسيرفر.");
+startWorker();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
